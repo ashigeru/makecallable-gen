@@ -342,20 +342,13 @@ public class MakeCallableProcessor implements AnnotationProcessor {
         AnnotationValue value = elements.get(Names.CONTAINER_NAME_PATTERN);
         String pattern = (String) value.getValue();
         try {
-            String sample = MessageFormat.format(pattern, "Class1");
+            String sample = MessageFormat.format(pattern, "_");
             if (isJavaIdentifier(sample) == false) {
                 environment.getMessager().printError(value.getPosition(), MessageFormat.format(
                     "\"{0}\" must be a valid Java name pattern (\"{1}\")",
                     Names.CONTAINER_NAME_PATTERN,
                     pattern));
                 return null;
-            }
-            String sample2 = MessageFormat.format(pattern, "Class2");
-            if (sample.equals(sample2)) {
-                environment.getMessager().printWarning(value.getPosition(), MessageFormat.format(
-                    "\"{0}\" should contain a parameter '{'0'}' (\"{1}\")",
-                    Names.CONTAINER_NAME_PATTERN,
-                    pattern));
             }
             return pattern;
         }
