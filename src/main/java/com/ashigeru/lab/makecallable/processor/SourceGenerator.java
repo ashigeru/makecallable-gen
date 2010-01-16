@@ -204,11 +204,12 @@ public class SourceGenerator {
 
     private void generateCallableFields(MethodModel method) {
         assert method != null;
+        out.line("private static final long serialVersionUID = ${[0]}L;", calculateHash(method));
         if (method.isStatic() == false) {
             out.line("private ${[0]} ${[1]};", erase(container.getType()), THIS);
         }
-        for (ParameterDeclaration p : method.getParameters()) {
-            out.line("private ${[0]} ${[1]};", erase(p.getType()), p.getSimpleName());
+        for (String parameter : erase(method.getParameters())) {
+            out.line("private ${[0]};", parameter);
         }
     }
 
@@ -232,8 +233,8 @@ public class SourceGenerator {
         if (method.isStatic() == false) {
             out.line("this.${[0]} = ${[0]};", THIS);
         }
-        for (ParameterDeclaration p : method.getParameters()) {
-            out.line("this.${[0]} = ${[0]};", p.getSimpleName());
+        for (int i = 0, n = method.getParameters().size(); i < n; i++) {
+            out.line("this.${[0]} = ${[0]};", argumentNameOf(i));
         }
         out.end();
         out.line("}");
@@ -247,14 +248,14 @@ public class SourceGenerator {
             out.line("${[0]}.${[1]}(${[2]});",
                 method.isStatic() ? erase(container.getType()) : THIS,
                 method.getTargetName(),
-                toParameterNames(method.getParameters()));
+                generateArgumentNames(method.getParameters()));
             out.line("return null;");
         }
         else {
             out.line("return (${[3]}) ${([4]) }${[0]}.${[1]}(${[2]});",
                 method.isStatic() ? erase(container.getType()) : THIS,
                 method.getTargetName(),
-                toParameterNames(method.getParameters()),
+                generateArgumentNames(method.getParameters()),
                 RETURN_TYPE_VAR,
                 boxingIfPrimitive(method.getReturnType()));
         }
@@ -262,11 +263,20 @@ public class SourceGenerator {
         out.line("}");
     }
 
-    private Collection<String> toParameterNames(Collection<ParameterDeclaration> parameters) {
+    private List<String> toParameterNames(Collection<ParameterDeclaration> parameters) {
         assert parameters != null;
-        Collection<String> results = new ArrayList<String>();
+        List<String> results = new ArrayList<String>();
         for (ParameterDeclaration p : parameters) {
             results.add(p.getSimpleName());
+        }
+        return results;
+    }
+
+    private List<String> generateArgumentNames(Collection<ParameterDeclaration> parameters) {
+        assert parameters != null;
+        List<String> results = new ArrayList<String>();
+        for (int i = 0, n = parameters.size(); i < n; i++) {
+            results.add(argumentNameOf(i));
         }
         return results;
     }
@@ -277,10 +287,16 @@ public class SourceGenerator {
 
     private Collection<String> erase(Collection<ParameterDeclaration> parameters) {
         Collection<String> results = new ArrayList<String>();
+        int index = 0;
         for (ParameterDeclaration p : parameters) {
-            results.add(String.format("%s %s", erase(p.getType()), p.getSimpleName()));
+            results.add(String.format("%s %s", erase(p.getType()), argumentNameOf(index++)));
         }
         return results;
+    }
+
+    private String argumentNameOf(int index) {
+        assert index >= 0;
+        return String.format("a%d", index);
     }
 
     private TypeMirror boxingIfPrimitive(TypeMirror t) {
@@ -326,6 +342,20 @@ public class SourceGenerator {
         String name = runtime.getName();
         TypeDeclaration type = environment.getTypeDeclaration(name);
         return environment.getTypeUtils().getDeclaredType(type);
+    }
+
+    private long calculateHash(MethodModel method) {
+        assert method != null;
+        long result = 0;
+        if (method.isStatic() == false) {
+            result++;
+            result += erase(container.getType()).toString().hashCode();
+        }
+        for (ParameterDeclaration p : method.getParameters()) {
+            result *= 31;
+            result += erase(p.getType()).toString().hashCode();
+        }
+        return result;
     }
 
     private static PrintWriter open(AnnotationProcessorEnvironment environment, ContainerModel model) throws IOException {
