@@ -355,6 +355,10 @@ public class SourceGenerator {
             result *= 31;
             result += erase(p.getType()).toString().hashCode();
         }
+        if (method.isVoid() == false) {
+            result *= 31;
+            result += erase(method.getReturnType()).toString().hashCode();
+        }
         return result;
     }
 
