@@ -15,6 +15,7 @@
  */
 package com.ashigeru.lab.makecallable.processor;
 
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import com.sun.mirror.declaration.TypeParameterDeclaration;
 import com.sun.mirror.type.DeclaredType;
 import com.sun.mirror.type.ReferenceType;
 import com.sun.mirror.type.TypeMirror;
+import com.sun.mirror.util.SourcePosition;
 import com.sun.mirror.util.Types;
 
 /**
@@ -53,6 +55,14 @@ public class MethodModel {
         this.types = types;
         this.config = config;
         this.decl = decl;
+    }
+
+    /**
+     * 起動対象メソッドのソースコード上の位置を返す。
+     * @return 起動対象メソッドのソースコード上の位置
+     */
+    public SourcePosition getPosition() {
+        return decl.getPosition();
     }
 
     /**
@@ -100,11 +110,8 @@ public class MethodModel {
      * @return 生成するデリゲートメソッドの名前
      */
     public String getName() {
-        String name = config.getNameOverride();
-        if (name != null) {
-            return name;
-        }
-        return decl.getSimpleName();
+        String pattern = config.getNamePattern();
+        return MessageFormat.format(pattern, decl.getSimpleName());
     }
 
     /**

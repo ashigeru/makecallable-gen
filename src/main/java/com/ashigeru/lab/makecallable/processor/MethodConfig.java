@@ -37,15 +37,18 @@ public class MethodConfig {
     /**
      * インスタンスを生成する。
      * @param access 設定によって上書きするアクセス修飾子
-     * @param name 設定によって上書きするメソッド単純名、既定値を利用する場合は{@code null}
+     * @param name MessageFormatの形式で記述された実装クラスの単純名
      * @param markerInterfaces 実装に付与するマーカーインターフェースの一覧
      */
     public MethodConfig(AccessPolicy access, String name, List<DeclaredType> markerInterfaces) {
-        if (markerInterfaces == null) {
-            throw new IllegalArgumentException("markerInterfaces is null"); //$NON-NLS-1$
-        }
         if (access == null) {
             throw new IllegalArgumentException("access is null"); //$NON-NLS-1$
+        }
+        if (name == null) {
+            throw new IllegalArgumentException("name is null"); //$NON-NLS-1$
+        }
+        if (markerInterfaces == null) {
+            throw new IllegalArgumentException("markerInterfaces is null"); //$NON-NLS-1$
         }
         this.access = access;
         this.name = name;
@@ -61,10 +64,10 @@ public class MethodConfig {
     }
 
     /**
-     * 設定によって上書きするメソッドおよび実装クラスの単純名を返す。
-     * @return 設定によって上書きする単純名、既定値を利用する場合は{@code null}
+     * MessageFormatの形式で記述された実装クラスの単純名を返す。
+     * @return 設定によって上書きする単純名のパターン
      */
-    public String getNameOverride() {
+    public String getNamePattern() {
         return name;
     }
 

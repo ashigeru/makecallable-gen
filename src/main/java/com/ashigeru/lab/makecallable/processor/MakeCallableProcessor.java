@@ -55,6 +55,11 @@ import com.sun.mirror.util.Types;
  */
 public class MakeCallableProcessor implements AnnotationProcessor {
 
+    private static final boolean DEBUG;
+    static {
+        DEBUG = System.getProperties().containsKey("DEBUG");
+    }
+
     private final AnnotationProcessorEnvironment environment;
 
     private final AnnotationTypeDeclaration containerDecl;
@@ -202,19 +207,43 @@ public class MakeCallableProcessor implements AnnotationProcessor {
                 methods.add(model);
             }
         }
-        return new ContainerModel(environment.getTypeUtils(), config, container, methods);
+
+        ContainerModel model = new ContainerModel(environment.getTypeUtils(), config, container, methods);
+        if (verify(model) == false) {
+            return null;
+        }
+
+        return model;
     }
 
     private ContainerConfig parseContainerConfig(TypeDeclaration container) {
         AnnotationMirror annotation = findAnnotation(containerDecl, container);
         Map<String, AnnotationValue> elements = getElements(annotation, containerDecl);
         AccessPolicy acessible = getAccessibility(elements);
-        String namePattern = getContainerNamePattern(elements);
+        String namePattern = getNamePattern(elements);
         if (namePattern == null) {
             return null;
         }
         ContainerConfig config = new ContainerConfig(acessible, namePattern);
         return config;
+    }
+
+    private boolean verify(ContainerModel model) {
+        assert model != null;
+        boolean verified = true;
+        Map<String, MethodModel> names = new HashMap<String, MethodModel>();
+        for (MethodModel method : model.getMethods()) {
+            String name = method.getName();
+            if (names.containsKey(name)) {
+                verified = false;
+                MethodModel conflict = names.get(name);
+                environment.getMessager().printError(method.getPosition(), MessageFormat.format(
+                    "The callable class \"{0}\" is already used in {1}",
+                    name, conflict));
+            }
+            names.put(name, method);
+        }
+        return verified;
     }
 
     private AnnotationMirror getMethodAnnotation(MethodDeclaration method) {
@@ -289,12 +318,9 @@ public class MakeCallableProcessor implements AnnotationProcessor {
         assert annotation != null;
         Map<String, AnnotationValue> elements = getElements(annotation, makecallableDecl);
         AccessPolicy access = getAccessibility(elements);
-        String name = getCallableName(elements);
+        String name = getNamePattern(elements);
         if (name == null) {
             return null;
-        }
-        else if (name.equals(Names.MAKE_CALLABLE_NAME_DEFAULT)) {
-            name = null;
         }
         List<DeclaredType> markerInterfaces = getMarkerInterfaces(elements);
         return new MethodConfig(access, name, markerInterfaces);
@@ -337,16 +363,16 @@ public class MakeCallableProcessor implements AnnotationProcessor {
         return AccessPolicy.valueOf(constant.getSimpleName());
     }
 
-    private String getContainerNamePattern(Map<String, AnnotationValue> elements) {
+    private String getNamePattern(Map<String, AnnotationValue> elements) {
         assert elements != null;
-        AnnotationValue value = elements.get(Names.CONTAINER_NAME_PATTERN);
+        AnnotationValue value = elements.get(Names.COMMON_NAME_PATTERN);
         String pattern = (String) value.getValue();
         try {
             String sample = MessageFormat.format(pattern, "_");
             if (isJavaIdentifier(sample) == false) {
                 environment.getMessager().printError(value.getPosition(), MessageFormat.format(
                     "\"{0}\" must be a valid Java name pattern (\"{1}\")",
-                    Names.CONTAINER_NAME_PATTERN,
+                    Names.COMMON_NAME_PATTERN,
                     pattern));
                 return null;
             }
@@ -355,24 +381,10 @@ public class MakeCallableProcessor implements AnnotationProcessor {
         catch (IllegalArgumentException e) {
             environment.getMessager().printError(value.getPosition(), MessageFormat.format(
                 "\"{0}\" must be a valid MessageFormat pattern (\"{1}\")",
-                Names.CONTAINER_NAME_PATTERN,
+                Names.COMMON_NAME_PATTERN,
                 pattern));
             return null;
         }
-    }
-
-    private String getCallableName(Map<String, AnnotationValue> elements) {
-        assert elements != null;
-        AnnotationValue value = elements.get(Names.MAKE_CALLABLE_NAME);
-        String name = (String) value.getValue();
-        if (isJavaIdentifier(name) == false) {
-            environment.getMessager().printError(value.getPosition(), MessageFormat.format(
-                "\"{0}\" must be a valid Java name (\"{1}\")",
-                Names.MAKE_CALLABLE_NAME,
-                name));
-            return null;
-        }
-        return name;
     }
 
     private boolean isJavaIdentifier(String ident) {
@@ -402,6 +414,8 @@ public class MakeCallableProcessor implements AnnotationProcessor {
     }
 
     private void debug(SourcePosition position, String pattern, Object...arguments) {
-        environment.getMessager().printNotice(position, MessageFormat.format(pattern, arguments));
+        if (DEBUG) {
+            environment.getMessager().printNotice(position, MessageFormat.format(pattern, arguments));
+        }
     }
 }

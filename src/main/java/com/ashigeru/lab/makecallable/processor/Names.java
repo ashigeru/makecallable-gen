@@ -15,11 +15,6 @@
  */
 package com.ashigeru.lab.makecallable.processor;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.sun.mirror.declaration.Modifier;
 
 /**
  * シンボルの名称に関する規則。
@@ -49,35 +44,14 @@ public class Names {
     public static final String COMMON_ACCESS = "accessible";
 
     /**
-     * 生成するデリゲートクラスの名前を指定するプロパティ名。
+     * 生成するデリゲートクラスやコンテナクラスの名前を指定するプロパティ名。
      */
-    public static final String MAKE_CALLABLE_NAME = "name";
+    public static final String COMMON_NAME_PATTERN = "name";
 
     /**
      * 生成するデリゲートクラスの直列化可能性を指定するプロパティ名。
      */
     public static final String MAKE_CALLABLE_SERIALIZABLE = "serializable";
-
-    /**
-     * 生成するコンテナクラスの名前を指定するプロパティ名。
-     */
-    public static final String CONTAINER_NAME_PATTERN = "name";
-
-    /**
-     * {@link #MAKE_CALLABLE_NAME}の規定値。
-     */
-    public static final String MAKE_CALLABLE_NAME_DEFAULT = "default";
-
-    /**
-     * {@link #MAKE_CALLABLE_NAME}の規定値。
-     */
-    public static final Map<String, Modifier> ACCESS_TO_MODIFIER;
-    static {
-        Map<String, Modifier> map = new HashMap<String, Modifier>();
-        map.put("PUBLIC", Modifier.PUBLIC);
-        map.put("PACKAGE", Modifier.PUBLIC);
-        ACCESS_TO_MODIFIER = Collections.unmodifiableMap(map);
-    }
 
     /**
      * インスタンス生成の禁止。
